@@ -5,36 +5,44 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/YOUR_USERNAME/jenkins-ci-demo.git'
+                git branch: 'main',
+                    url: 'https://github.com/Anmolkhare772/jenkins.git'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the project...'
+                echo 'Building HTML website...'
+                sh 'ls -la'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Testing the project...'
+                echo 'Testing HTML website...'
+                sh 'test -f index.html'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying the project...'
+                echo 'Deploying website to Apache...'
+
+                sh '''
+                    sudo rsync -av --delete ./ /var/www/html/
+                    sudo systemctl restart apache2
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'CI Pipeline Successful!'
+            echo 'Website deployed successfully!'
         }
 
         failure {
-            echo 'CI Pipeline Failed!'
+            echo 'Website deployment failed!'
         }
     }
 }
