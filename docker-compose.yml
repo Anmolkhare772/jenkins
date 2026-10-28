@@ -6,7 +6,7 @@ services:
       - mongo-data:/data/db
 
   app:
-    build: .
+    image: anmol122/anmol-mern-app:latest
     ports:
       - "8080:5000"
     environment:
