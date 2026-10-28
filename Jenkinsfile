@@ -1,8 +1,11 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        IMAGE_NAME = 'anmol122/anmol-mern-app'
+    }
 
+    stages {
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -10,27 +13,36 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build Image') {
             steps {
-                echo 'Building HTML website...'
-                sh 'ls -la'
+                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -t $IMAGE_NAME:latest .'
             }
         }
 
-        stage('Test') {
+        stage('Push to Docker Hub') {
             steps {
-                echo 'Testing HTML website...'
-                sh 'test -f index.html'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_TOKEN'
+                )]) {
+                    sh '''
+                        set +x
+                        echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                        docker push "$IMAGE_NAME:$BUILD_NUMBER"
+                        docker push "$IMAGE_NAME:latest"
+                        docker logout
+                    '''
+                }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Locally') {
             steps {
-                echo 'Deploying website to Apache...'
-
                 sh '''
-                    sudo rsync -av --delete ./ /var/www/html/
-                    sudo systemctl restart apache2
+                    docker compose pull app
+                    docker compose up -d --no-build
+                    docker compose ps
                 '''
             }
         }
@@ -38,11 +50,10 @@ pipeline {
 
     post {
         success {
-            echo 'Website deployed successfully!'
+            echo 'Build, Docker Hub push, and deployment completed!'
         }
-
         failure {
-            echo 'Website deployment failed!'
+            echo 'Pipeline failed. Check the stage logs.'
         }
     }
 }
