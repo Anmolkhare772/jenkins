@@ -1,3 +1,4 @@
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -22,7 +23,14 @@ app.get("/api/message", (req, res) => {
     });
 });
 
+// Serve the HTML, CSS and JavaScript assignment
+const projectPath = path.join(__dirname, "../project");
+
+app.use("/project", express.static(projectPath));
+
+// Serve the existing React frontend
 const frontendPath = path.join(__dirname, "../frontend/dist");
+
 app.use(express.static(frontendPath));
 
 app.use((req, res, next) => {
@@ -35,6 +43,7 @@ app.use((req, res, next) => {
         }
     );
 });
+
 app.listen(5000, "0.0.0.0", () => {
     console.log("Server running on port 5000");
 });
